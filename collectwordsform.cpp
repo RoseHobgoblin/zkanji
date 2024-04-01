@@ -744,7 +744,7 @@ void collectKanjiWords(Dictionary *dict, const std::vector<ushort> &kanjis)
 {
     CollectWordsForm *f = new CollectWordsForm((QWidget*)gUI->activeMainForm());
     f->exec(dict, kanjis);
-}
+};
 
 
 //-------------------------------------------------------------

@@ -872,10 +872,10 @@ public:
 private:
     template <class InputIterator>
     void _assign(InputIterator first, InputIterator last) {
-        smartvector_object.base.clear();  // Clear existing elements
-        smartvector_object.base.reserve(std::distance(first, last)); 
+        base.clear();  // Clear existing elements
+        base.reserve(std::distance(first, last)); // Pre-allocate for efficiency
         for (auto it = first; it != last; ++it) {
-            smartvector_object.base.emplace_back(std::make_unique<T>(*it)); 
+            base.emplace_back(std::make_unique<T>(*it)); // Construct in-place
         }
     }
 

@@ -34,6 +34,8 @@ template<typename T, typename Alloc>
 class smartvector_iterator 
 {
 protected:
+    typedef std::vector<std::unique_ptr<T>, Alloc>::iterator basetype; 
+    typedef std::vector<std::unique_ptr<T>, Alloc>::const_iterator const_basetype
     typedef typename std::vector<T*, Alloc>::iterator basetype;
     typedef typename std::vector<T*, Alloc>::const_iterator const_basetype;
 private:
@@ -54,6 +56,8 @@ public:
 
     smartvector_iterator(const self_type &orig) : base(orig.base) {}
     //smartvector_iterator(const const_self_type &orig) : base(orig.base) {}
+
+    smartvector_iterator(const smartvector_iterator &other) : base(other.base) {}
 
     smartvector_iterator(const basetype &base) : base(base) {}
     //smartvector_iterator(const const_basetype &base) : base(base) {}

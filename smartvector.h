@@ -20,9 +20,9 @@ namespace nostd
 }
 
 
-template<typename T, typename Alloc=std::allocator<T*>> class smartvector;
-template<typename T, typename Alloc=std::allocator<T*>> class smartvector_iterator;
-template<typename T, typename Alloc=std::allocator<T*>> class smartvector_const_iterator;
+template<typename T, typename Alloc=std::allocator<std::unique_ptr<T>>> class smartvector;
+template<typename T, typename Alloc=std::allocator<std::unique_ptr<T>>> class smartvector_iterator;
+template<typename T, typename Alloc=std::allocator<std::unique_ptr<T>>> class smartvector_const_iterator;
 
 template<typename T, typename Alloc> smartvector_iterator<T, Alloc> operator+(typename smartvector_iterator<T, Alloc>::difference_type, const smartvector_iterator<T, Alloc> &);
 template<typename T, typename Alloc> smartvector_iterator<T, Alloc> operator-(typename smartvector_iterator<T, Alloc>::difference_type, const smartvector_iterator<T, Alloc> &);
@@ -36,8 +36,8 @@ class smartvector_iterator
 protected:
     typedef std::vector<std::unique_ptr<T>, Alloc>::iterator basetype; 
     typedef std::vector<std::unique_ptr<T>, Alloc>::const_iterator const_basetype
-    typedef typename std::vector<T*, Alloc>::iterator basetype;
-    typedef typename std::vector<T*, Alloc>::const_iterator const_basetype;
+    typedef typename std::vector<std::unique_ptr<T>, Alloc>::iterator basetype;
+    typedef typename std::vector<std::unique_ptr<T>, Alloc>::const_iterator const_basetype;
 private:
     typedef smartvector_iterator<T, Alloc> self_type;
     typedef smartvector_const_iterator<T, Alloc> const_self_type;
@@ -46,7 +46,7 @@ protected:
     basetype _base() { return base; }
     const basetype _base() const { return base; }
 public:
-    typedef typename std::vector<T*, Alloc>::iterator::iterator_category iterator_category;
+    typedef typename std::vector<std::unique_ptr<T>, Alloc>::iterator::iterator_category iterator_category;
     typedef T*   value_type;
     typedef T**  pointer;
     typedef T*&  reference;
@@ -107,7 +107,7 @@ private:
     friend smartvector_iterator<T, Alloc> (::operator- <>) (difference_type, const smartvector_iterator<T, Alloc> &);
 };
 
-template<typename T, typename Alloc = std::allocator<T*>>
+template<typename T, typename Alloc = std::allocator<std::unique_ptr<T>>>
 class smartvector_move_iterator : public smartvector_iterator<T, Alloc>
 {
 private:
@@ -148,11 +148,11 @@ class smartvector_const_iterator
 private:
     typedef smartvector_const_iterator<T, Alloc> self_type;
     typedef smartvector_iterator<T, Alloc> mod_self_type;
-    typedef typename std::vector<T*, Alloc>::const_iterator basetype;
-    typedef typename std::vector<T*, Alloc>::iterator mod_basetype;
+    typedef typename std::vector<std::unique_ptr<T>, Alloc>::const_iterator basetype;
+    typedef typename std::vector<std::unique_ptr<T>, Alloc>::iterator mod_basetype;
     basetype base;
 public:
-    typedef typename std::vector<T*, Alloc>::const_iterator::iterator_category iterator_category;
+    typedef typename std::vector<std::unique_ptr<T>, Alloc>::const_iterator::iterator_category iterator_category;
     typedef T*   value_type;
     typedef T**  pointer;
     typedef T*&  reference;
@@ -233,10 +233,10 @@ template<typename T, typename Alloc> smartvector_const_iterator<T, Alloc> operat
 // compile time error. If specified, the custom allocator must be valid for a vector
 // that holds T* elements.
 template<typename T, typename Alloc>
-class smartvector : protected std::vector<T*, Alloc>
+class smartvector : protected std::vector<std::unique_ptr<T>, Alloc>
 {
 private:
-    typedef std::vector<T*, Alloc>  base;
+    typedef std::vector<std::unique_ptr<T>, Alloc>  base;
     typedef smartvector<T, Alloc>   self_type;
     typedef T   value_base_type;
 
@@ -259,28 +259,29 @@ public:
     explicit smartvector(typename std::enable_if<!std::is_pointer<T>::value, const allocator_type&>::type alloc = allocator_type()) : base(alloc) {}
     explicit smartvector(typename std::enable_if<!std::is_pointer<T>::value, size_type>::type n) : base(n) {}
 
-    smartvector(typename std::enable_if<!std::is_pointer<T>::value, size_type>::type n, const value_base_type& val, const allocator_type& alloc = allocator_type()) : base(alloc)
+    smartvector(size_type n, const T& val, const allocator_type& alloc = allocator_type()) : base(alloc)
     {
-        base::reserve(n);
-        for (int ix = 0; ix != n; ++ix)
-            push_back(val);
+        base.reserve(n);
+        for (size_type ix = 0; ix != n; ++ix)
+            base.emplace_back(std::make_unique<T>(val)); 
     }
 
     template<class InputIterator>
-    smartvector(typename std::enable_if<!std::is_pointer<T>::value, InputIterator>::type first, InputIterator last, const allocator_type& alloc = allocator_type()) : base(alloc)
+    smartvector(InputIterator first, InputIterator last, const allocator_type& alloc = allocator_type()) : base(alloc)
     {
-        _assign(first, last);
+        for (auto it = first; it != last; ++it) {
+            base.emplace_back(std::make_unique<T>(*it));
+        }
     }
 
-    smartvector(typename std::enable_if<!std::is_pointer<T>::value, const self_type&>::type x) : base(x.get_allocator())
-    {
-        base::reserve(x.size());
-        for (auto it = x.begin(); it != x.end(); ++it)
-        {
-            if (it.null())
-                push_back(nullptr);
-            else
-                push_back(**it);
+    smartvector(const self_type& x) : base(x.get_allocator()) {
+        base.reserve(x.size());
+        for (auto it = x.begin(); it != x.end(); ++it) {
+            if (!it || !(*it)) { // Check for valid unique_ptr and non-null content
+                base.emplace_back(nullptr); 
+            } else {
+                base.emplace_back(std::make_unique<T>(**it)); 
+            }
         }
     }
 
@@ -290,9 +291,9 @@ public:
         for (auto it = x.begin(); it != x.end(); ++it)
         {
             if (it.null())
-                push_back(nullptr);
+                emplace_back(std::make_unique<T>(...))(nullptr);
             else
-                push_back(**it);
+                emplace_back(std::make_unique<T>(...))(**it);
         }
     }
 
@@ -303,6 +304,8 @@ public:
     {
         _assign(il);
     }
+
+    smartvector(smartvector&& other) noexcept : base(std::move(other.base)) {} 
 
     ~smartvector() { clear(); }
 
@@ -868,13 +871,15 @@ public:
     }
 
 private:
-    void _assign(std::initializer_list<value_base_type> &il)
-    {
-        _assign(il.begin(), il.end());
-        //base::reserve(il.size());
-        //for (auto it = il.begin(); it != il.end(); ++it)
-        //    push_back(*it)
+    template <class InputIterator>
+    void _assign(InputIterator first, InputIterator last) {
+        base.clear();  // Clear existing elements
+        base.reserve(std::distance(first, last)); // Pre-allocate for efficiency
+        for (auto it = first; it != last; ++it) {
+            base.emplace_back(std::make_unique<T>(*it)); // Construct in-place
+        }
     }
+
 
     // Available if the passed iterator references an object by pointer and not by value.
     template<class InputIterator>
@@ -921,18 +926,18 @@ private:
 template<typename T, typename Alloc>
 bool operator==(const smartvector<T, Alloc> &a, const smartvector<T, Alloc> &b)
 {
-    return static_cast<const std::vector<T*, Alloc>&>(a) == static_cast<const std::vector<T*, Alloc>&>(b);
+    return static_cast<const std::vector<std::unique_ptr<T>, Alloc>&>(a) == static_cast<const std::vector<std::unique_ptr<T>, Alloc>&>(b);
 }
 
 template<typename T, typename Alloc>
 bool operator!=(const smartvector<T, Alloc> &a, const smartvector<T, Alloc> &b)
 {
-    return static_cast<const std::vector<T*, Alloc>&>(a) != static_cast<const std::vector<T*, Alloc>&>(b);
+    return static_cast<const std::vector<std::unique_ptr<T>, Alloc>&>(a) != static_cast<const std::vector<std::unique_ptr<T>, Alloc>&>(b);
 }
 
 namespace std
 {
-    template <class T, class Alloc = std::allocator<T*>>
+    template <class T, class Alloc = std::allocator<std::unique_ptr<T>>>
     inline void swap(smartvector<T, Alloc> &x, smartvector<T, Alloc> &y)
     {
         x.swap(y);

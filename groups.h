@@ -171,7 +171,35 @@ public:
 
     // Creates an exact copy of src apart from the dictionary, which is unchanged. Creates new
     // groups as necessary instead of copying pointers.
-    void copy(GroupCategoryBase *src);
+    void copy(GroupCategoryBase* src) {
+    // Note: This assumes `GroupCategoryBase`, `WordGroup`, and `KanjiGroup` have suitable copy constructors.
+
+    // 1. Copying Child Categories
+        list.clear(); // Optional: Clear existing categories if needed
+        for (size_t i = 0; i < src->list.size(); ++i) {
+            GroupCategoryBase* rawChildPtr = src->list[i].get();
+            list.emplace_back(std::make_unique<GroupCategoryBase>(*rawChildPtr));  
+        }
+
+    // 2. Copying Groups
+        groups.clear(); // Optional: Clear existing groups if needed
+        for (size_t i = 0; i < src->groups.size(); ++i) {
+            GroupBase* rawGroupPtr = src->groups[i].get();
+
+            if (auto wordGroup = dynamic_cast<WordGroup*>(rawGroupPtr)) {
+                groups.emplace_back(std::make_unique<WordGroup>(*wordGroup)); 
+            } else if (auto kanjiGroup = dynamic_cast<KanjiGroup*>(rawGroupPtr)) {
+                groups.emplace_back(std::make_unique<KanjiGroup>(*kanjiGroup));
+            } else {
+                // Handle other potential GroupBase derived types if necessary
+                // Example: throw an exception or log an error.
+            }
+        } 
+
+   // 3. Additional Copying
+   // If there are other members in GroupCategoryBase or derived classes that
+   // need to be copied (not the dictionary), add the copy logic here.
+    }
 
     // Creates a child category and returns its index.
     int addCategory(QString name);

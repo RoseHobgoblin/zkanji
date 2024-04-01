@@ -65,13 +65,13 @@ public:
 
     bool isNull() const { return base.operator*() == nullptr; }
     bool null() const { return base.operator*() == nullptr; }
-    T*& operator*() { return base.operator*(); }
-    T*& operator->() { return base.operator->(); }
+    T* operator*()  { return base.operator*().get(); }
+    T* operator->() { return base.operator->().get(); } 
     T* operator[](difference_type n) { return base[n].get();}
 
 
-    T*& operator*() const { return base.operator*(); }
-    T*& operator->() const { return base.operator->(); }
+    const T* operator*() const  { return base.operator*().get(); }
+    const T* operator->() const { return base.operator->().get(); } 
     const T* operator[](difference_type n) const { return base[n].get(); }
 
     self_type& operator++() { ++base; return *this; }

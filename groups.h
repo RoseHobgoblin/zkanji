@@ -184,7 +184,9 @@ public:
     // 2. Copying Groups
         groups.clear(); // Optional: Clear existing groups if needed
         for (size_t i = 0; i < src->groups.size(); ++i) {
-            GroupBase* rawGroupPtr = src->groups[i].get();
+            GroupBase* rawGroupPtr = src->groups[i].get(); // Get the raw pointer 
+            std::unique_ptr<GroupBase> newGroup = std::make_unique<GroupBase>(*rawGroupPtr); // Create a new unique_ptr
+            groups.emplace_back(std::move(newGroup)); // Add the unique_ptr
 
             if (auto wordGroup = dynamic_cast<WordGroup*>(rawGroupPtr)) {
                 groups.emplace_back(std::make_unique<WordGroup>(*wordGroup)); 

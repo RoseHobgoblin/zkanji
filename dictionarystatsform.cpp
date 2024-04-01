@@ -436,11 +436,11 @@ void DictionaryStatsForm::updateData()
 
     cnt = 0;
     cnt2 = 0;
-    for (int ix = 0, siz = tosigned(ZKanji::kanjis.size()); ix != siz; ++ix)
-    {
-        if (ZKanji::kanjis[ix]->jouyou < 7)
+    for (int ix = 0, siz = tosigned(ZKanji::kanjis.size()); ix != siz; ++ix) {
+        KanjiEntry* rawKanjiPtr = ZKanji::kanjis[ix].get(); // Get raw pointer
+        if (rawKanjiPtr->jouyou < 7) 
             ++cnt;
-        if (ZKanji::kanjis[ix]->jlpt != 0)
+        if (rawKanjiPtr->jlpt != 0) 
             ++cnt2;
     }
 

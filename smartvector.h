@@ -736,7 +736,7 @@ public:
         return base::erase(first.base, last.base);
     }
 
-
+ /*
     //// Removes the pointers between [first, last) without deleting them and returns them in a
     //// vector. 
     //std::vector<value_base_type*> removeAt(iterator first, iterator last)
@@ -745,6 +745,7 @@ public:
     //    base::erase(first.base(), last.base());
     //    return result;
     //};
+ */
 
     void swap(self_type &x)
     {

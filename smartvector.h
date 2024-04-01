@@ -67,12 +67,12 @@ public:
     bool null() const { return base.operator*() == nullptr; }
     T*& operator*() { return base.operator*(); }
     T*& operator->() { return base.operator->(); }
-    T* operator[](difference_type n) { return base[n].get();}
-
+    T*& operator[](difference_type n) { return base[n]; }
+    T*& operator[](difference_type n) { return base[n]; }
 
     T*& operator*() const { return base.operator*(); }
     T*& operator->() const { return base.operator->(); }
-    const T* operator[](difference_type n) const { return base[n].get(); }
+    T*& operator[](difference_type n) { return base[n]; }
 
     self_type& operator++() { ++base; return *this; }
     self_type operator++(int) { self_type copy(*this);  ++base; return copy; }

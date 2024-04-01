@@ -744,7 +744,7 @@ public:
     //    std::vector<value_base_type*> result(first.base(), last.base());
     //    base::erase(first.base(), last.base());
     //    return result;
-    //}
+    //};
 
     void swap(self_type &x)
     {

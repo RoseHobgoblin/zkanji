@@ -552,7 +552,7 @@ public:
 
     void applyChanges(const std::map<int, int> &changes);
 
-    void copy(WordGroups *src);
+    void copyWordGroupsData(WordGroups *src);
 
     // Removes any data of the passed word index from groups and decrements the index of words
     // above this value.

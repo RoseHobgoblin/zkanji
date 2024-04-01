@@ -305,8 +305,6 @@ public:
         _assign(il);
     }
 
-    smartvector(smartvector&& other) noexcept : base(std::move(other.base)) {} 
-
     ~smartvector() { clear(); }
 
     size_type size() const

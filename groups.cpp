@@ -393,10 +393,9 @@ void GroupCategoryBase::remove(const std::vector<GroupBase*>& which) {
     for (int ix = 0, siz = tosigned(items.size()); ix != siz; ++ix) {
         GroupCategoryBase* p = items[ix]->parentCategory();
 
-        // Attempt to downcast to GroupCategoryBase
         GroupCategoryBase* categoryPtr = dynamic_cast<GroupCategoryBase*>(items[ix]);
-        if (categoryPtr != nullptr) {  // If it's a GroupCategoryBase
-            categoryPtr->emitDeleted(); // Safer to use the derived class pointer  
+        if (categoryPtr != nullptr) { 
+            categoryPtr->emitDeleted(); 
             int index = p->categoryIndex(categoryPtr); 
 
             emit owner->categoryAboutToBeDeleted(p, index, p->list[index]);
@@ -404,21 +403,26 @@ void GroupCategoryBase::remove(const std::vector<GroupBase*>& which) {
             emit owner->categoryDeleted(p, index, categoryPtr);
 
         } else if (WordGroup* wordGroupPtr = dynamic_cast<WordGroup*>(items[ix])) { 
-            // Handle WordGroup objects
             int index = p->groupIndex(wordGroupPtr);
             emit owner->groupAboutToBeDeleted(p, index, p->groups[index]);
             p->groups.erase(p->groups.begin() + index);            
-            owner->emitGroupDeleted(p, index, wordGroupPtr);
+            owner->emitGroupDeleted(p, index, wordGroupPtr); 
+
+        } else if (KanjiGroup* kanjiGroupPtr = dynamic_cast<KanjiGroup*>(items[ix])) {
+            // Handle KanjiGroup objects (similar logic as WordGroup)
+            int index = p->groupIndex(kanjiGroupPtr);
+            emit owner->groupAboutToBeDeleted(p, index, p->groups[index]);
+            p->groups.erase(p->groups.begin() + index);            
+            owner->emitGroupDeleted(p, index, kanjiGroupPtr);
 
         } else {
             // Handle other potential GroupBase derived types or log an error.
-            // Example:
-            // std::cerr << "Error: Unknown GroupBase derived type encountered during removal!\n";
         }
     }
 
     dictionary()->setToUserModified();
 }
+
 
 bool GroupCategoryBase::moveCategory(GroupCategoryBase *what, GroupCategoryBase *destparent, int destindex)
 {

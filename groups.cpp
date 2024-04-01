@@ -386,31 +386,34 @@ void GroupCategoryBase::deleteGroup(int index)
     //emit owner->groupDeleted(this, index, oldptr);
 }
 
-void GroupCategoryBase::remove(const std::vector<GroupBase*> &which)
-{
+void GroupCategoryBase::remove(const std::vector<GroupBase*>& which) {
     std::vector<GroupBase*> items;
     selectTopItems(which, items);
 
-    for (int ix = 0, siz = tosigned(items.size()); ix != siz; ++ix)
-    {
-        GroupCategoryBase *p = items[ix]->parentCategory();
-        if (items[ix]->isCategory())
-        {
-            ((GroupCategoryBase*)items[ix])->emitDeleted();
-            int index = p->categoryIndex((GroupCategoryBase*)items[ix]);
+    for (int ix = 0, siz = tosigned(items.size()); ix != siz; ++ix) {
+        GroupCategoryBase* p = items[ix]->parentCategory();
+
+        // Attempt to downcast to GroupCategoryBase
+        GroupCategoryBase* categoryPtr = dynamic_cast<GroupCategoryBase*>(items[ix]);
+        if (categoryPtr != nullptr) {  // If it's a GroupCategoryBase
+            categoryPtr->emitDeleted(); // Safer to use the derived class pointer  
+            int index = p->categoryIndex(categoryPtr); 
 
             emit owner->categoryAboutToBeDeleted(p, index, p->list[index]);
             p->list.erase(p->list.begin() + index);
-            emit owner->categoryDeleted(p, index, (GroupCategoryBase*)items[ix]);
-        }
-        else
-        {
-            int index = p->groupIndex(items[ix]);
-            emit owner->groupAboutToBeDeleted(p, index, p->groups[index]);
-            p->groups.erase(p->groups.begin() + index);
+            emit owner->categoryDeleted(p, index, categoryPtr);
 
-            owner->emitGroupDeleted(p, index, items[ix]);
-            //emit owner->groupDeleted(p, index, items[ix]);
+        } else if (WordGroup* wordGroupPtr = dynamic_cast<WordGroup*>(items[ix])) { 
+            // Handle WordGroup objects
+            int index = p->groupIndex(wordGroupPtr);
+            emit owner->groupAboutToBeDeleted(p, index, p->groups[index]);
+            p->groups.erase(p->groups.begin() + index);            
+            owner->emitGroupDeleted(p, index, wordGroupPtr);
+
+        } else {
+            // Handle other potential GroupBase derived types or log an error.
+            // Example:
+            // std::cerr << "Error: Unknown GroupBase derived type encountered during removal!\n";
         }
     }
 

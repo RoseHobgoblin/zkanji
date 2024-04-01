@@ -870,12 +870,13 @@ public:
     }
 
 private:
-    void _assign(std::initializer_list<value_base_type> &il)
-    {
-        _assign(il.begin(), il.end());
-        //base::reserve(il.size());
-        //for (auto it = il.begin(); it != il.end(); ++it)
-        //    push_back(*it)
+    template <class InputIterator>
+    void _assign(InputIterator first, InputIterator last) {
+        this->base.clear();  // Clear existing elements
+        this->base.reserve(std::distance(first, last)); 
+        for (auto it = first; it != last; ++it) {
+            this->base.emplace_back(std::make_unique<T>(*it)); 
+        }
     }
 
 
